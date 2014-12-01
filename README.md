@@ -2,8 +2,11 @@
 
 > Expose Mio resources via Express middleware.
 
-This module can be paired with [mio-ajax](https://github.com/mio/ajax) for
-automatic client-server communication.
+* Pair with [mio-ajax](https://github.com/mio/ajax) for automatic
+  client-server communication.
+* PATCH support with
+  [fast-json-patch](https://github.com/Starcounter-Jack/Fast-JSON-Patch)
+* Emits events for accessing requests
 
 **Example**  
 ```javascript
@@ -36,12 +39,15 @@ User.mount(app);
 app
   .get('/users', User.routes.index)
   .post('/users', User.routes.create)
-  .delete('/users', User.routes.destroyAll)
-  .options('/users', User.routes.describe)
+  .put('/users', User.routes.updateMany)
+  .patch('/users', User.routes.updateMany)
+  .delete('/users', User.routes.destroyMany)
+  .options('/users', User.routes.describeCollection)
   .get('/users/:id', User.routes.show)
+  .put('/users/:id', User.routes.update)
   .patch('/users/:id', User.routes.update)
   .delete('/users/:id', User.routes.destroy)
-  .options('/users/:id', User.routes.describe);
+  .options('/users/:id', User.routes.describeResource);
 ```
 
 ## Installation
@@ -53,108 +59,17 @@ npm install mio-express
 ```
 
 ## API Reference
-**Members**
-
-* [mio-express](#module_mio-express)
-  * [mio-express.index(Resource, req, res, next)](#module_mio-express.index)
-  * [mio-express.show(Resource, req, res, next)](#module_mio-express.show)
-  * [mio-express.create(Resource, req, res, next)](#module_mio-express.create)
-  * [mio-express.update(Resource, req, res, next)](#module_mio-express.update)
-  * [mio-express.destroy(Resource, req, res, next)](#module_mio-express.destroy)
-  * [mio-express.destroyAll(Resource, req, res, next)](#module_mio-express.destroyAll)
-  * [mio-express.describe(Resource, req, res, next)](#module_mio-express.describe)
-
-<a name="module_mio-express.index"></a>
-##mio-express.index(Resource, req, res, next)
-Retrieve collection resource.
-
-GET /collection
+<a name="exp_module_mio-express"></a>
+##module.exports(settings) ⏏
+Returns Mio plugin function.
 
 **Params**
 
-- Resource `Resource`  
-- req `http.ServerRequest`  
-- res `http.ServerResponse`  
-- next `function`  
-
-<a name="module_mio-express.show"></a>
-##mio-express.show(Resource, req, res, next)
-Retrieve resource.
-
-GET /collection/:id
-
-**Params**
-
-- Resource `Resource`  
-- req `http.ServerRequest`  
-- res `http.ServerResponse`  
-- next `function`  
-
-<a name="module_mio-express.create"></a>
-##mio-express.create(Resource, req, res, next)
-Create resource.
-
-POST /collection
-
-**Params**
-
-- Resource `Resource`  
-- req `http.ServerRequest`  
-- res `http.ServerResponse`  
-- next `function`  
-
-<a name="module_mio-express.update"></a>
-##mio-express.update(Resource, req, res, next)
-Replace or update resource.
-
-PUT|PATCH /collection/:id
-
-**Params**
-
-- Resource `Resource`  
-- req `http.ServerRequest`  
-- res `http.ServerResponse`  
-- next `function`  
-
-<a name="module_mio-express.destroy"></a>
-##mio-express.destroy(Resource, req, res, next)
-Destroy resource.
-
-DELETE /collection/:id
-
-**Params**
-
-- Resource `Resource`  
-- req `http.ServerRequest`  
-- res `http.ServerResponse`  
-- next `function`  
-
-<a name="module_mio-express.destroyAll"></a>
-##mio-express.destroyAll(Resource, req, res, next)
-Destroy all resources matching query.
-
-DELETE /collection
-
-**Params**
-
-- Resource `Resource`  
-- req `http.ServerRequest`  
-- res `http.ServerResponse`  
-- next `function`  
-
-<a name="module_mio-express.describe"></a>
-##mio-express.describe(Resource, req, res, next)
-Describe resource by introspecting Resource definition.
-
-OPTIONS /collection
-OPTIONS /collection/:id
-
-**Params**
-
-- Resource `Resource`  
-- req `http.ServerRequest`  
-- res `http.ServerResponse`  
-- next `function`  
+- settings `Object`  
+  - url `Object`  
+  - resource `String`  
+  - collection `String`  
+  - allowPatch `Boolean` - use PATCH routes and JSON-Patch (default: true)  
 
 
 

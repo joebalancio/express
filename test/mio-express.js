@@ -42,12 +42,15 @@ describe('plugin', function() {
     .use(bodyParser.json())
     .get('/users', User.routes.index)
     .post('/users', User.routes.create)
-    .delete('/users', User.routes.destroyAll)
-    .options('/users', User.routes.describe)
+    .put('/users', User.routes.updateMany)
+    .patch('/users', User.routes.updateMany)
+    .delete('/users', User.routes.destroyMany)
+    .options('/users', User.routes.describeCollection)
     .get('/users/:id', User.routes.show)
     .put('/users/:id', User.routes.update)
+    .patch('/users/:id', User.routes.update)
     .delete('/users/:id', User.routes.destroy)
-    .options('/users/:id', User.routes.describe)
+    .options('/users/:id', User.routes.describeResource)
     .use(function(err, req, res, next) {
       if (err) {
         return res.status(500).json({ error: err.message });
@@ -68,14 +71,14 @@ describe('plugin', function() {
   describe('.mount()', function() {
     it('registers express route handlers', function (done) {
       User.mount(app);
-      expect(app._router.stack.length).to.equal(21);
+      expect(app._router.stack.length).to.equal(26);
       done();
     });
   });
 
   describe('.index()', function() {
     it('responds to GET /users', function(done) {
-      User.findAll = function(query, callback) {
+      User.find = function(query, callback) {
         callback(null, []);
       };
       request(app)
@@ -89,7 +92,8 @@ describe('plugin', function() {
     });
 
     it('passes error along to response', function(done) {
-      User.findAll = function(query, callback) {
+      var find = User.find;
+      User.find = function(query, callback) {
         callback(new Error("uh oh"));
       };
       request(app)
@@ -97,6 +101,7 @@ describe('plugin', function() {
         .set('Accept', 'application/json')
         .expect(500)
         .end(function(err, res) {
+          User.find = find;
           if (err) return done(err);
           res.body.should.have.property('error');
           done();
@@ -227,6 +232,68 @@ describe('plugin', function() {
     });
   });
 
+  describe('.updateMany()', function() {
+    it('responds to PATCH /users with single patch', function(done) {
+      User.update = function(query, changes, callback) {
+        callback();
+      };
+      User.find = function(query, callback) {
+        callback(null, [{ active: false }]);
+      };
+      request(app)
+        .patch('/users')
+        .set('Accept', 'application/json')
+        .send({
+          op: 'replace',
+          path: '/active',
+          value: true
+        })
+        .expect(204)
+        .end(function(err, res) {
+          if (err) return done(err);
+          done();
+        });
+    });
+
+    it('responds to PATCH /users with patches array', function(done) {
+      User.update = function(query, changes, callback) {
+        callback();
+      };
+      User.find = function(query, callback) {
+        callback(null, [{ active: false }]);
+      };
+      request(app)
+        .patch('/users')
+        .set('Accept', 'application/json')
+        .send([{
+          op: 'replace',
+          path: '/active',
+          value: true
+        }])
+        .expect(204)
+        .end(function(err, res) {
+          if (err) return done(err);
+          done();
+        });
+    });
+
+    it('passes error along to response', function(done) {
+      User.update = function(query, changes, callback) {
+        callback(new Error("uh oh"));
+      };
+      request(app)
+        .put('/users')
+        .set('Accept', 'application/json')
+        .send([{ name: 'alex' }])
+        .expect(500)
+        .end(function(err, res) {
+          if (err) return done(err);
+          res.body.should.have.property('error');
+          done();
+        });
+    });
+  });
+
   describe('.destroy()', function(done) {
     var user = new User({ id: 123, name: "jeff" });
 
@@ -266,9 +333,9 @@ describe('plugin', function() {
     });
   });
 
-  describe('.destroyAll()', function() {
+  describe('.destroyMany()', function() {
     it('responds to DELETE /users', function(done) {
-      User.destroyAll = function(query, callback) {
+      User.destroy = function(query, callback) {
         callback(null, []);
       };
       request(app)
@@ -282,7 +349,7 @@ describe('plugin', function() {
     });
 
     it('passes error along to response', function(done) {
-      User.destroyAll = function(query, callback) {
+      User.destroy = function(query, callback) {
         callback(new Error("uh oh"));
       };
       request(app)
@@ -305,7 +372,7 @@ describe('plugin', function() {
         .set('Accept', 'application/json')
         .end(function(err, res) {
           if (err) return done(err);
-          res.body.should.have.property('resource_url');
+          res.body.should.have.property('url');
           res.body.should.have.property('resource_schema');
           done();
         });

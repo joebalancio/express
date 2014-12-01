@@ -1,0 +1,53 @@
+{
+  "name": "mio-express",
+  "description": "Expose Mio resources via Express middleware.",
+  "version": "1.0.0",
+  "homepage": "https://github.com/mio/express",
+  "author": {
+    "name": "Alex Mingoia",
+    "email": "talk@alexmingoia.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mio/express.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mio/express/issues"
+  },
+  "licenses": [
+    {
+      "type": "Open Works License (OWL)",
+      "url": "https://github.com/mio/express/blob/master/LICENSE"
+    }
+  ],
+  "main": "lib/mio-express.js",
+  "files": [
+    "lib"
+  ],
+  "engines": {
+    "node": ">= 0.10.26",
+    "npm": ">=1.4.3"
+  },
+  "scripts": {
+    "test": "./node_modules/gulp/bin/gulp.js test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "body-parser": "^1.9.3",
+    "chai": "^1.9.1",
+    "express": "^4.10.4",
+    "gulp": "^3.8.7",
+    "gulp-clean": "^0.3.1",
+    "gulp-coveralls": "^0.1.3",
+    "gulp-instrument": "^0.1.0",
+    "gulp-jshint": "^1.8.4",
+    "gulp-mocha": "^1.0.0",
+    "jsdoc-to-markdown": "^0.5.7",
+    "jshint-stylish": "^1.0.0",
+    "mocha-lcov-reporter": "0.0.1",
+    "supertest": "^0.15.0",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.0.0"
+  },
+  "keywords": []
+}

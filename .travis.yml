@@ -1,0 +1,8 @@
+language: node_js
+node_js:
+- 0.1
+after_script:
+- "./node_modules/gulp/bin/gulp.js coveralls"
+env:
+  global:
+    secure: p7Ar3odl+p3wOJFe7+OSa4YNkjdOThn11beb/Lw1WBoz+wnOoJdX2MRCk/rt+Wj/+wBdqNSL7qhuHI88Jmt0KmPMtwTxQQwg03G8mLdbLqwwAx1JLYY/vFbdGPC2QlBQbjvPxGxc0P+LZ65ASvu8uxsvzBqFtROHS6Y5duXGH1c=

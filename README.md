@@ -64,6 +64,13 @@ npm install mio-express
 ##ExpressResource(settings) ⏏
 Returns Mio plugin function.
 
+**404 Errors**
+
+Note that `show`, `update`, and `destroy` handlers return
+[`HttpError`](https://github.com/c9/node-http-error) errors for missing
+resources. These errors should be handled by your downstream error handling
+middleware.
+
 **Events**
 
 - request `http.ServerRequest` emitted by route handlers on request

@@ -6,6 +6,7 @@
   client-server communication.
 * PATCH support with
   [fast-json-patch](https://github.com/Starcounter-Jack/Fast-JSON-Patch)
+* Responds with 405 status for unsupported methods
 * Emits events for accessing requests
 
 **Example**  
@@ -43,12 +44,14 @@ app
   .put('/users', User.routes.updateMany)
   .patch('/users', User.routes.updateMany)
   .delete('/users', User.routes.destroyMany)
-  .options('/users', User.routes.describeCollection)
+  .options('/users', User.routes.describe)
+  .all('/users', User.routes.methodNotAllowed)
   .get('/users/:id', User.routes.show)
   .put('/users/:id', User.routes.update)
   .patch('/users/:id', User.routes.update)
   .delete('/users/:id', User.routes.destroy)
-  .options('/users/:id', User.routes.describeResource);
+  .options('/users/:id', User.routes.describe)
+  .all('/users/:id', User.routes.methodNotAllowed);
 ```
 
 ## Installation

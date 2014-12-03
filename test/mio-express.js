@@ -45,12 +45,12 @@ describe('plugin', function() {
     .put('/users', User.routes.updateMany)
     .patch('/users', User.routes.updateMany)
     .delete('/users', User.routes.destroyMany)
-    .options('/users', User.routes.describeCollection)
+    .options('/users', User.routes.describe)
     .get('/users/:id', User.routes.show)
     .put('/users/:id', User.routes.update)
     .patch('/users/:id', User.routes.update)
     .delete('/users/:id', User.routes.destroy)
-    .options('/users/:id', User.routes.describeResource)
+    .options('/users/:id', User.routes.describe)
     .use(function(err, req, res, next) {
       if (err) {
         return res.status(500).json({ error: err.message });

@@ -18,22 +18,23 @@ var User = mio.Resource.extend({
   attributes: {
     id: { primary: true }
   }
-});
-
-User.use(ExpressResource({
-  url: {
-    resource: '/users/:id'
-    collection: '/users'
-  }
+}, {
+  use: [
+    ExpressResource({
+      url: {
+        resource: '/users/:id'
+        collection: '/users'
+      }
+    })
+  ]
 });
 
 var app = express();
 
-// creates route handlers
 User.mount(app);
 ```
 
-`Resource.mount(app)` is sugar for:
+Creates routes mapped to mio resource methods:
 
 ```javascript
 app

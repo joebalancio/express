@@ -60,8 +60,12 @@ npm install mio-express
 
 ## API Reference
 <a name="exp_module_mio-express"></a>
-##module.exports(settings) ⏏
+##ExpressResource(settings) ⏏
 Returns Mio plugin function.
+
+**Events**
+
+- request `http.ServerRequest` emitted by route handlers on request
 
 **Params**
 
@@ -71,6 +75,7 @@ Returns Mio plugin function.
   - collection `String`  
   - allowPatch `Boolean` - use PATCH routes and JSON-Patch (default: true)  
 
+**Returns**: `function`  
 
 
 ## Contributing

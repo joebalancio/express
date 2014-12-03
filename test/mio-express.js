@@ -28,7 +28,7 @@ describe('mio-express module', function() {
 
 describe('plugin', function() {
   var User = mio.Resource.extend()
-    .use(ExpressResource({
+    .use(new ExpressResource({
       url: {
         resource: '/users/:id',
         collection: '/users'
@@ -57,6 +57,12 @@ describe('plugin', function() {
       }
       next();
     });
+
+  it('throws error if missing settings', function () {
+    expect(function() {
+      mio.Resource.extend().use(ExpressResource());
+    }).to.throw(/settings are required/);
+  });
 
   it('creates express route handlers for resource', function(done) {
     User.should.have.property('routes');
@@ -121,6 +127,21 @@ describe('plugin', function() {
           if (err) return done(err);
           res.body.should.have.property('id', 123);
           res.body.should.have.property('name', 'bob');
+          done();
+        });
+    });
+
+    it('returns 404 error for missing resource', function(done) {
+      User.findOne = function(id, callback) {
+        callback();
+      };
+      request(app)
+        .get('/users/123')
+        .set('Accept', 'application/json')
+        .expect(500)
+        .end(function(err, res) {
+          if (err) return done(err);
+          expect(res.body).to.have.property('error', '404: Not Found');
           done();
         });
     });
@@ -207,10 +228,71 @@ describe('plugin', function() {
         .put('/users/123')
         .send({ name: "jeff" })
         .set('Accept', 'application/json')
+        .expect(204)
         .end(function(err, res) {
           if (err) return done(err);
-          res.body.should.have.property('id', 123);
-          res.body.should.have.property('name', 'jeff');
+          done();
+        });
+    });
+
+    it('returns 404 error for missing resource', function(done) {
+      User.findOne = function(id, callback) {
+        callback();
+      };
+      request(app)
+        .put('/users/123')
+        .send({ name: "jeff" })
+        .set('Accept', 'application/json')
+        .expect(500)
+        .end(function(err, res) {
+          if (err) return done(err);
+          expect(res.body).to.have.property('error', '404: Not Found');
+          done();
+        });
+    });
+
+    it('responds to PATCH /users/123 with single patch', function(done) {
+      User.findOne = function(query, callback) {
+        callback(null, {
+          save: function(cb) {
+            cb();
+          }
+        });
+      };
+      request(app)
+        .patch('/users/123')
+        .set('Accept', 'application/json')
+        .send({
+          op: 'replace',
+          path: '/active',
+          value: true
+        })
+        .expect(204)
+        .end(function(err, res) {
+          if (err) return done(err);
+          done();
+        });
+    });
+
+    it('responds to PATCH /users/123 with array of patches', function(done) {
+      User.findOne = function(query, callback) {
+        callback(null, {
+          save: function(cb) {
+            cb();
+          }
+        });
+      };
+      request(app)
+        .patch('/users/123')
+        .set('Accept', 'application/json')
+        .send([{
+          op: 'replace',
+          path: '/active',
+          value: true
+        }])
+        .expect(204)
+        .end(function(err, res) {
+          if (err) return done(err);
           done();
         });
     });
@@ -314,6 +396,21 @@ describe('plugin', function() {
         });
     });
 
+    it('returns 404 error for missing resource', function(done) {
+      User.findOne = function(id, callback) {
+        callback();
+      };
+      request(app)
+        .del('/users/123')
+        .set('Accept', 'application/json')
+        .expect(500)
+        .end(function(err, res) {
+          if (err) return done(err);
+          expect(res.body).to.have.property('error', '404: Not Found');
+          done();
+        });
+    });
+
     it('passes error along to response', function(done) {
       User.findOne = function(id, callback) {
         callback(null, { id: 123 });
@@ -374,7 +471,16 @@ describe('plugin', function() {
           if (err) return done(err);
           res.body.should.have.property('url');
           res.body.should.have.property('resource_schema');
-          done();
+          request(app)
+            .options('/users/1')
+            .expect(200)
+            .set('Accept', 'application/json')
+            .end(function(err, res) {
+              if (err) return done(err);
+              res.body.should.have.property('url');
+              res.body.should.have.property('resource_schema');
+              done();
+            });
         });
     });
   });

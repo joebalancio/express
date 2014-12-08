@@ -16,8 +16,8 @@ var ExpressResource = process.env.JSCOV ? require('../lib-cov/mio-express') : re
 
 describe('mio-express module', function() {
   it('exports plugin factory', function() {
-    expect(ExpressResource).to.be.a('function');
-    expect(ExpressResource({
+    expect(ExpressResource.plugin).to.be.a('function');
+    expect(ExpressResource.plugin({
       url: {
         resource: '/users/:id',
         collection: '/users'
@@ -27,41 +27,47 @@ describe('mio-express module', function() {
 });
 
 describe('plugin', function() {
-  var User = mio.Resource.extend()
-    .use(new ExpressResource({
-      url: {
-        resource: '/users/:id',
-        collection: '/users'
-      }
-    }))
-    .attr('id', { primary: true })
-    .attr('name')
-    .attr('group_id');
+  var User, app;
 
-  var app = express()
-    .use(bodyParser.json())
-    .get('/users', User.routes.index)
-    .post('/users', User.routes.create)
-    .put('/users', User.routes.updateMany)
-    .patch('/users', User.routes.updateMany)
-    .delete('/users', User.routes.destroyMany)
-    .options('/users', User.routes.describe)
-    .get('/users/:id', User.routes.show)
-    .put('/users/:id', User.routes.update)
-    .patch('/users/:id', User.routes.update)
-    .delete('/users/:id', User.routes.destroy)
-    .options('/users/:id', User.routes.describe)
-    .use(function(err, req, res, next) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      next();
-    });
+  function createUserAndApp() {
+    User = mio.Resource.extend()
+      .attr('id', { primary: true })
+      .attr('name')
+      .attr('group_id')
+      .use(ExpressResource.plugin({
+        url: {
+          resource: '/users/:id',
+          collection: '/users'
+        }
+      }));
+
+    app = express()
+      .use(bodyParser.json())
+      .use(User.router)
+      .get('/users', User.routes.index)
+      .post('/users', User.routes.create)
+      .patch('/users', User.routes.updateMany)
+      .delete('/users', User.routes.destroyMany)
+      .options('/users', User.routes.describe)
+      .get('/users/:id', User.routes.show)
+      .put('/users/:id', User.routes.replace)
+      .patch('/users/:id', User.routes.update)
+      .delete('/users/:id', User.routes.destroy)
+      .options('/users/:id', User.routes.describe)
+      .use(function(err, req, res, next) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        next();
+      });
+  };
+
+  beforeEach(createUserAndApp);
 
   it('throws error if missing settings', function () {
     expect(function() {
-      mio.Resource.extend().use(ExpressResource());
-    }).to.throw(/settings are required/);
+      mio.Resource.extend().use(ExpressResource.plugin());
+    }).to.throw(/requires settings/);
   });
 
   it('creates express route handlers for resource', function(done) {
@@ -74,15 +80,9 @@ describe('plugin', function() {
     done();
   });
 
-  describe('.mount()', function() {
-    it('registers express route handlers', function (done) {
-      User.mount(app);
-      expect(app._router.stack.length).to.equal(26);
-      done();
-    });
-  });
-
   describe('.index()', function() {
+    beforeEach(createUserAndApp);
+
     it('responds to GET /users', function(done) {
       User.find = function(query, callback) {
         callback(null, []);
@@ -116,6 +116,8 @@ describe('plugin', function() {
   });
 
   describe('.show()', function(done) {
+    beforeEach(createUserAndApp);
+
     it('responds to GET /users/123', function(done) {
       User.findOne = function(id, callback) {
         callback(null, { id: 123, name: "bob" });
@@ -147,7 +149,7 @@ describe('plugin', function() {
     });
 
     it('passes error along to response', function(done) {
-      User.findOne = function(callback) {
+      User.findOne = function(query, callback) {
         callback(new Error("uh oh"));
       };
       request(app)
@@ -163,17 +165,19 @@ describe('plugin', function() {
   });
 
   describe('.create()', function(done) {
+    beforeEach(createUserAndApp);
+
     it('responds to POST /users', function(done) {
-      User.before('create', function(model, changed, cb) {
-        cb(null, { id: 123, name: "bob" });
-      });
+      User.prototype.save = function(cb) {
+        cb(null, new User({ id: 123, name: "bob" }));
+      };
       request(app)
         .post('/users')
         .send({ id: 123, name: "bob" })
         .set('Accept', 'application/json')
+        .expect(201)
         .end(function(err, res) {
           if (err) return done(err);
-          res.status.should.equal(201);
           res.body.should.have.property('id', 123);
           done();
         });
@@ -199,9 +203,9 @@ describe('plugin', function() {
     });
 
     it('passes error along to response', function(done) {
-      User.before('create', function(model, changed, cb) {
+      User.prototype.save = function(cb) {
         cb(new Error("error"));
-      });
+      };
       request(app)
         .post('/users')
         .set('Accept', 'application/json')
@@ -215,14 +219,16 @@ describe('plugin', function() {
     });
   });
 
-  describe('.update()', function(done) {
+  describe('.replace()', function(done) {
+    beforeEach(createUserAndApp);
+
     it('responds to PUT /users/123', function(done) {
-      User.listeners = {};
-      User.before('update', function(model, changed, cb) {
-        cb(null, { id: 123, name: 'jeff' });
-      });
       User.findOne = function(id, callback) {
         callback(null, new User({ id: 123, name: "bob" }));
+      };
+      User.prototype.save = function(cb) {
+        this.reset({id: 123, name: 'jeff' });
+        cb();
       };
       request(app)
         .put('/users/123')
@@ -235,18 +241,23 @@ describe('plugin', function() {
         });
     });
 
-    it('returns 404 error for missing resource', function(done) {
-      User.findOne = function(id, callback) {
-        callback();
+    it('creates new resource if it one did not exist', function(done) {
+      User.findOne = function(query, cb) {
+        cb.call(this);
+      };
+      User.prototype.save = function(cb) {
+        this.reset({ id: 123, name: 'jeff'});
+        cb();
       };
       request(app)
         .put('/users/123')
         .send({ name: "jeff" })
         .set('Accept', 'application/json')
-        .expect(500)
+        .expect(201)
         .end(function(err, res) {
           if (err) return done(err);
-          expect(res.body).to.have.property('error', '404: Not Found');
+          expect(res.body).to.have.property('id', 123);
+          expect(res.body).to.have.property('name', 'jeff');
           done();
         });
     });
@@ -315,12 +326,14 @@ describe('plugin', function() {
   });
 
   describe('.updateMany()', function() {
+    beforeEach(createUserAndApp);
+
     it('responds to PATCH /users with single patch', function(done) {
       User.update = function(query, changes, callback) {
         callback();
       };
       User.find = function(query, callback) {
-        callback(null, [{ active: false }]);
+        callback.call(this, null, [{ active: false }]);
       };
       request(app)
         .patch('/users')
@@ -342,7 +355,7 @@ describe('plugin', function() {
         callback();
       };
       User.find = function(query, callback) {
-        callback(null, [{ active: false }]);
+        callback.call(this, null, [{ active: false }]);
       };
       request(app)
         .patch('/users')
@@ -364,7 +377,7 @@ describe('plugin', function() {
         callback(new Error("uh oh"));
       };
       request(app)
-        .put('/users')
+        .patch('/users')
         .set('Accept', 'application/json')
         .send([{ name: 'alex' }])
         .expect(500)
@@ -377,14 +390,11 @@ describe('plugin', function() {
   });
 
   describe('.destroy()', function(done) {
-    var user = new User({ id: 123, name: "jeff" });
+    beforeEach(createUserAndApp);
 
     it('responds to DELETE /users/123', function(done) {
-      User.findOne = function(id, callback) {
-        callback(null, user);
-      };
-      user.destroy = function(callback) {
-        callback(null);
+      User.findOne = function(query, callback) {
+        callback(null, new User({ id: 123 }));
       };
       request(app)
         .del('/users/123')
@@ -412,11 +422,8 @@ describe('plugin', function() {
     });
 
     it('passes error along to response', function(done) {
-      User.findOne = function(id, callback) {
-        callback(null, { id: 123 });
-      };
-      user.destroy = function(callback) {
-        callback(new Error("uh oh"));
+      User.findOne = function(query, callback) {
+        callback(new Error('error'));
       };
       request(app)
         .del('/users/123')
@@ -431,6 +438,8 @@ describe('plugin', function() {
   });
 
   describe('.destroyMany()', function() {
+    beforeEach(createUserAndApp);
+
     it('responds to DELETE /users', function(done) {
       User.destroy = function(query, callback) {
         callback(null, []);
@@ -462,6 +471,8 @@ describe('plugin', function() {
   });
 
   describe('.describe()', function() {
+    beforeEach(createUserAndApp);
+
     it('introspects and describes Model as resource', function(done) {
       request(app)
         .options('/users')

@@ -2,55 +2,66 @@
 
 > Expose Mio resources via Express middleware.
 
-* Pair with [mio-ajax](https://github.com/mio/ajax) for automatic
+- Pair with [mio-ajax](https://github.com/mio/ajax) for automatic
   client-server communication.
-* PATCH support with
+- PATCH support with
   [fast-json-patch](https://github.com/Starcounter-Jack/Fast-JSON-Patch)
-* Responds with 405 status for unsupported methods
-* Emits events for accessing requests
+- Responds with 405 status for unsupported methods
+- Support [`Prefer`](http://tools.ietf.org/html/rfc7240#section-4.2)
+  header to control whether PUT and PATCH return the resource
+- Emits events for accessing requests
 
 **Example**  
+Use the plugin and specify `resource` and `collection` URLs:
+
 ```javascript
 var mio = require('mio');
 var ExpressResource = require('mio-express');
-var express = require('express');
 
 var User = mio.Resource.extend({
   attributes: {
     id: { primary: true }
   }
-}, {
-  use: [
-    ExpressResource({
-      url: {
-        resource: '/users/:id'
-        collection: '/users'
-      }
-    })
-  ]
 });
 
-var app = express();
-
-User.mount(app);
+User.use(ExpressResource.plugin({
+  url: {
+    resource: '/users/:id'
+    collection: '/users'
+  }
+});
 ```
 
-Creates routes mapped to mio resource methods:
+This will expose Express route handlers at `User.routes` and a resource
+routing middleware via `User.router`.
+
+Use `User.router` to route all actions:
+
+```javascript
+var bodyParser = require('body-parser');
+var express = require('express');
+var app = express();
+
+app
+  .use(bodyParser.json())
+  .use(User.router);
+```
+
+Use `User.routes` handlers individually for complete control:
 
 ```javascript
 app
   .get('/users', User.routes.index)
   .post('/users', User.routes.create)
-  .put('/users', User.routes.updateMany)
   .patch('/users', User.routes.updateMany)
   .delete('/users', User.routes.destroyMany)
   .options('/users', User.routes.describe)
   .all('/users', User.routes.methodNotAllowed)
   .get('/users/:id', User.routes.show)
-  .put('/users/:id', User.routes.update)
+  .put('/users/:id', User.routes.replace)
   .patch('/users/:id', User.routes.update)
   .delete('/users/:id', User.routes.destroy)
-  .options('/users/:id', User.routes.describe)
+  .options('/users/:id', User.routes.describeMany)
   .all('/users/:id', User.routes.methodNotAllowed);
 ```
 
@@ -63,9 +74,63 @@ npm install mio-express
 ```
 
 ## API Reference
-<a name="exp_module_mio-express"></a>
-##ExpressResource(settings) ⏏
+**Members**
+
+* [mio-express](#module_mio-express)
+  * [mio-express.plugin(settings)](#module_mio-express.plugin)
+  * [mio-express~mio](#external_mio)
+    * [mio.Resource](#external_mio.Resource)
+      * [Resource.routes](#external_mio.Resource.routes)
+        * [routes.index(req, res, next)](#external_mio.Resource.routes.index)
+        * [routes.create(req, res, next)](#external_mio.Resource.routes.create)
+        * [routes.replace(req, res, next)](#external_mio.Resource.routes.replace)
+        * [routes.update(req, res, next)](#external_mio.Resource.routes.update)
+        * [routes.updateMany(req, res, next)](#external_mio.Resource.routes.updateMany)
+        * [routes.destroy(req, res, next)](#external_mio.Resource.routes.destroy)
+        * [routes.destroyMany(req, res, next)](#external_mio.Resource.routes.destroyMany)
+        * [routes.describe(req, res, next)](#external_mio.Resource.routes.describe)
+      * [Resource.router(req, res, next)](#external_mio.Resource.router)
+
+<a name="module_mio-express.plugin"></a>
+##mio-express.plugin(settings)
 Returns Mio plugin function.
+
+**Params**
+
+- settings `Object`  
+  - url `Object`  
+  - resource `String`  
+  - collection `String`  
+  - \[actions\] `Object` - handlers that should be created/mounted  
+
+**Returns**: `MioExpressPlugin`  
+**Example**  
+Provide all available REST actions:
+
+```javascript
+User.use(exports({
+  url: {
+    resource: '/users/:id',
+    collection: '/users'
+  }
+});
+```
+
+Provide only specified REST actions:
+
+```javascript
+User.use(exports({
+  url: {
+    resource: '/users/:id',
+    collection: '/users',
+    actions: {
+      show: '/users/:id',
+      update: '/users/:id',
+      create: '/users'
+    }
+  }
+});
+```
 
 **404 Errors**
 
@@ -76,17 +141,8 @@ middleware.
 
 **Events**
 
-- request `http.ServerRequest` emitted by route handlers on request
+- request `express.Request` emitted by route handlers on request
 
-**Params**
-
-- settings `Object`  
-  - url `Object`  
-  - resource `String`  
-  - collection `String`  
-  - allowPatch `Boolean` - use PATCH routes and JSON-Patch (default: true)  
-
-**Returns**: `function`  
 
 
 ## Contributing

@@ -78,6 +78,7 @@ npm install mio-express
 
 * [mio-express](#module_mio-express)
   * [mio-express.plugin(settings)](#module_mio-express.plugin)
+  * [event: "request"](#event_request)
   * [mio-express~mio](#external_mio)
     * [mio.Resource](#external_mio.Resource)
       * [Resource.routes](#external_mio.Resource.routes)
@@ -139,10 +140,16 @@ Note that `show`, `update`, and `destroy` handlers return
 resources. These errors should be handled by your downstream error handling
 middleware.
 
-**Events**
+<a name="event_request"></a>
 
-- request `express.Request` emitted by route handlers on request
+##event: "request"
+Emitted by route handlers on request.
 
+**Params**
+
+- request `express.Request`  
+
+**Scope**: inner event of [mio-express](#module_mio-express)  
 
 
 ## Contributing

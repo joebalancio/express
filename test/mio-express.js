@@ -441,7 +441,7 @@ describe('plugin', function() {
     beforeEach(createUserAndApp);
 
     it('responds to DELETE /users', function(done) {
-      User.destroy = function(query, callback) {
+      User.remove = function(query, callback) {
         callback(null, []);
       };
       request(app)
@@ -455,7 +455,7 @@ describe('plugin', function() {
     });
 
     it('passes error along to response', function(done) {
-      User.destroy = function(query, callback) {
+      User.remove = function(query, callback) {
         callback(new Error("uh oh"));
       };
       request(app)

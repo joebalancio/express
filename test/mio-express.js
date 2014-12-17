@@ -18,10 +18,7 @@ describe('mio-express module', function() {
   it('exports plugin factory', function() {
     expect(ExpressResource.plugin).to.be.a('function');
     expect(ExpressResource.plugin({
-      url: {
-        resource: '/users/:id',
-        collection: '/users'
-      }
+      baseUrl: '/users'
     })).to.be.a('function');
   });
 });
@@ -30,30 +27,20 @@ describe('plugin', function() {
   var User, app;
 
   function createUserAndApp() {
-    User = mio.Resource.extend()
-      .attr('id', { primary: true })
-      .attr('name')
-      .attr('group_id')
-      .use(ExpressResource.plugin({
-        url: {
-          resource: '/users/:id',
-          collection: '/users'
-        }
-      }));
+    User = mio.Resource.extend({
+      attributes: {
+        id: { primary: true },
+        name: {},
+        group_id: {}
+      }
+    }, {
+      baseUrl: '/users'
+    })
+    .use(ExpressResource.plugin());
 
     app = express()
       .use(bodyParser.json())
       .use(User.router)
-      .get('/users', User.routes.index)
-      .post('/users', User.routes.create)
-      .patch('/users', User.routes.updateMany)
-      .delete('/users', User.routes.destroyMany)
-      .options('/users', User.routes.describe)
-      .get('/users/:id', User.routes.show)
-      .put('/users/:id', User.routes.replace)
-      .patch('/users/:id', User.routes.update)
-      .delete('/users/:id', User.routes.destroy)
-      .options('/users/:id', User.routes.describe)
       .use(function(err, req, res, next) {
         if (err) {
           return res.status(500).json({ error: err.message });
@@ -64,62 +51,21 @@ describe('plugin', function() {
 
   beforeEach(createUserAndApp);
 
-  it('throws error if missing settings', function () {
-    expect(function() {
-      mio.Resource.extend().use(ExpressResource.plugin());
-    }).to.throw(/requires settings/);
-  });
-
   it('creates express route handlers for resource', function(done) {
     User.should.have.property('routes');
-    User.routes.should.have.property('index');
-    User.routes.should.have.property('show');
-    User.routes.should.have.property('create');
-    User.routes.should.have.property('update');
-    User.routes.should.have.property('destroy');
+    User.routes.should.have.property('get');
+    User.routes.should.have.property('put');
+    User.routes.should.have.property('post');
+    User.routes.should.have.property('patch');
+    User.routes.should.have.property('delete');
     done();
   });
 
-  describe('.index()', function() {
-    beforeEach(createUserAndApp);
-
-    it('responds to GET /users', function(done) {
-      User.find = function(query, callback) {
-        callback(null, []);
-      };
-      request(app)
-        .get('/users')
-        .set('Accept', 'application/json')
-        .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err);
-          done();
-        });
-    });
-
-    it('passes error along to response', function(done) {
-      var find = User.find;
-      User.find = function(query, callback) {
-        callback(new Error("uh oh"));
-      };
-      request(app)
-        .get('/users')
-        .set('Accept', 'application/json')
-        .expect(500)
-        .end(function(err, res) {
-          User.find = find;
-          if (err) return done(err);
-          res.body.should.have.property('error');
-          done();
-        });
-    });
-  });
-
-  describe('.show()', function(done) {
+  describe('.get()', function(done) {
     beforeEach(createUserAndApp);
 
     it('responds to GET /users/123', function(done) {
-      User.findOne = function(id, callback) {
+      User.get = function(id, callback) {
         callback(null, { id: 123, name: "bob" });
       };
       request(app)
@@ -134,7 +80,7 @@ describe('plugin', function() {
     });
 
     it('returns 404 error for missing resource', function(done) {
-      User.findOne = function(id, callback) {
+      User.get = function(id, callback) {
         callback();
       };
       request(app)
@@ -149,7 +95,7 @@ describe('plugin', function() {
     });
 
     it('passes error along to response', function(done) {
-      User.findOne = function(query, callback) {
+      User.get = function(query, callback) {
         callback(new Error("uh oh"));
       };
       request(app)
@@ -164,11 +110,11 @@ describe('plugin', function() {
     });
   });
 
-  describe('.create()', function(done) {
+  describe('.post()', function(done) {
     beforeEach(createUserAndApp);
 
     it('responds to POST /users', function(done) {
-      User.prototype.save = function(cb) {
+      User.post = function(body, cb) {
         cb(null, new User({ id: 123, name: "bob" }));
       };
       request(app)
@@ -184,9 +130,9 @@ describe('plugin', function() {
     });
 
     it('Adds parameters that match attributes to request body', function(done) {
-      app.post('/groups/:group_id/users', User.routes.create);
-      User.before('create', function(model, changed, cb) {
-        cb(null, { id: 123, name: "bob" });
+      app.post('/groups/:group_id/users', User.routes.post);
+      User.before('post', function(changed, cb) {
+        cb(null, changed);
       });
       request(app)
         .post('/groups/3/users')
@@ -203,7 +149,7 @@ describe('plugin', function() {
     });
 
     it('passes error along to response', function(done) {
-      User.prototype.save = function(cb) {
+      User.post = function(cb) {
         cb(new Error("error"));
       };
       request(app)
@@ -219,14 +165,14 @@ describe('plugin', function() {
     });
   });
 
-  describe('.replace()', function(done) {
+  describe('.put()', function(done) {
     beforeEach(createUserAndApp);
 
     it('responds to PUT /users/123', function(done) {
-      User.findOne = function(id, callback) {
+      User.get = function(id, callback) {
         callback(null, new User({ id: 123, name: "bob" }));
       };
-      User.prototype.save = function(cb) {
+      User.put = function(cb) {
         this.reset({id: 123, name: 'jeff' });
         cb();
       };
@@ -242,10 +188,10 @@ describe('plugin', function() {
     });
 
     it('creates new resource if it one did not exist', function(done) {
-      User.findOne = function(query, cb) {
+      User.get = function(query, cb) {
         cb.call(this);
       };
-      User.prototype.save = function(cb) {
+      User.prototype.put = function(cb) {
         this.reset({ id: 123, name: 'jeff'});
         cb();
       };
@@ -263,9 +209,9 @@ describe('plugin', function() {
     });
 
     it('responds to PATCH /users/123 with single patch', function(done) {
-      User.findOne = function(query, callback) {
+      User.get = function(query, callback) {
         callback(null, {
-          save: function(cb) {
+          patch: function(cb) {
             cb();
           }
         });
@@ -286,9 +232,9 @@ describe('plugin', function() {
     });
 
     it('responds to PATCH /users/123 with array of patches', function(done) {
-      User.findOne = function(query, callback) {
+      User.get = function(query, callback) {
         callback(null, {
-          save: function(cb) {
+          patch: function(cb) {
             cb();
           }
         });
@@ -309,7 +255,7 @@ describe('plugin', function() {
     });
 
     it('passes error along to response', function(done) {
-      User.findOne = function(id, callback) {
+      User.get = function(id, callback) {
         callback(new Error("uh oh"));
       };
       request(app)
@@ -325,15 +271,98 @@ describe('plugin', function() {
     });
   });
 
-  describe('.updateMany()', function() {
+  describe('.delete()', function(done) {
+    beforeEach(createUserAndApp);
+
+    it('responds to DELETE /users/123', function(done) {
+      User.get = function(query, callback) {
+        callback(null, new User({ id: 123 }));
+      };
+      request(app)
+        .del('/users/123')
+        .set('Accept', 'application/json')
+        .end(function(err, res) {
+          if (err) return done(err);
+          res.status.should.equal(204);
+          done();
+        });
+    });
+
+    it('returns 404 error for missing resource', function(done) {
+      User.get = function(id, callback) {
+        callback();
+      };
+      request(app)
+        .del('/users/123')
+        .set('Accept', 'application/json')
+        .expect(500)
+        .end(function(err, res) {
+          if (err) return done(err);
+          expect(res.body).to.have.property('error', '404: Not Found');
+          done();
+        });
+    });
+
+    it('passes error along to response', function(done) {
+      User.get = function(query, callback) {
+        callback(new Error('error'));
+      };
+      request(app)
+        .del('/users/123')
+        .set('Accept', 'application/json')
+        .expect(500)
+        .end(function(err, res) {
+          if (err) return done(err);
+          res.body.should.have.property('error');
+          done();
+        });
+    });
+  });
+
+  describe('.collection.get()', function() {
+    beforeEach(createUserAndApp);
+
+    it('responds to GET /users', function(done) {
+      User.Collection.get = function(query, callback) {
+        callback(null, []);
+      };
+      request(app)
+        .get('/users')
+        .set('Accept', 'application/json')
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err);
+          done();
+        });
+    });
+
+    it('passes error along to response', function(done) {
+      var find = User.find;
+      User.Collection.get = function(query, callback) {
+        callback(new Error("uh oh"));
+      };
+      request(app)
+        .get('/users')
+        .set('Accept', 'application/json')
+        .expect(500)
+        .end(function(err, res) {
+          User.find = find;
+          if (err) return done(err);
+          res.body.should.have.property('error');
+          done();
+        });
+    });
+  });
+
+  describe('.collection.patch()', function() {
     beforeEach(createUserAndApp);
 
     it('responds to PATCH /users with single patch', function(done) {
-      User.update = function(query, changes, callback) {
-        callback();
+      User.Collection.patch = function(query, changes, callback) {
+        callback.call(User);
       };
-      User.find = function(query, callback) {
-        callback.call(this, null, [{ active: false }]);
+      User.Collection.get = function(query, callback) {
+        callback.call(User, null, [{ active: false }]);
       };
       request(app)
         .patch('/users')
@@ -351,11 +380,11 @@ describe('plugin', function() {
     });
 
     it('responds to PATCH /users with patches array', function(done) {
-      User.update = function(query, changes, callback) {
-        callback();
+      User.Collection.patch = function(query, changes, callback) {
+        callback.call(User);
       };
-      User.find = function(query, callback) {
-        callback.call(this, null, [{ active: false }]);
+      User.Collection.get = function(query, callback) {
+        callback.call(User, null, [{ active: false }]);
       };
       request(app)
         .patch('/users')
@@ -373,7 +402,7 @@ describe('plugin', function() {
     });
 
     it('passes error along to response', function(done) {
-      User.update = function(query, changes, callback) {
+      User.Collection.patch = function(query, changes, callback) {
         callback(new Error("uh oh"));
       };
       request(app)
@@ -389,59 +418,11 @@ describe('plugin', function() {
     });
   });
 
-  describe('.destroy()', function(done) {
-    beforeEach(createUserAndApp);
-
-    it('responds to DELETE /users/123', function(done) {
-      User.findOne = function(query, callback) {
-        callback(null, new User({ id: 123 }));
-      };
-      request(app)
-        .del('/users/123')
-        .set('Accept', 'application/json')
-        .end(function(err, res) {
-          if (err) return done(err);
-          res.status.should.equal(204);
-          done();
-        });
-    });
-
-    it('returns 404 error for missing resource', function(done) {
-      User.findOne = function(id, callback) {
-        callback();
-      };
-      request(app)
-        .del('/users/123')
-        .set('Accept', 'application/json')
-        .expect(500)
-        .end(function(err, res) {
-          if (err) return done(err);
-          expect(res.body).to.have.property('error', '404: Not Found');
-          done();
-        });
-    });
-
-    it('passes error along to response', function(done) {
-      User.findOne = function(query, callback) {
-        callback(new Error('error'));
-      };
-      request(app)
-        .del('/users/123')
-        .set('Accept', 'application/json')
-        .expect(500)
-        .end(function(err, res) {
-          if (err) return done(err);
-          res.body.should.have.property('error');
-          done();
-        });
-    });
-  });
-
-  describe('.destroyMany()', function() {
+  describe('.collection.delete()', function() {
     beforeEach(createUserAndApp);
 
     it('responds to DELETE /users', function(done) {
-      User.remove = function(query, callback) {
+      User.Collection.delete = function(query, callback) {
         callback(null, []);
       };
       request(app)
@@ -455,7 +436,7 @@ describe('plugin', function() {
     });
 
     it('passes error along to response', function(done) {
-      User.remove = function(query, callback) {
+      User.Collection.delete = function(query, callback) {
         callback(new Error("uh oh"));
       };
       request(app)
@@ -470,7 +451,7 @@ describe('plugin', function() {
     });
   });
 
-  describe('.describe()', function() {
+  describe('.options()', function() {
     beforeEach(createUserAndApp);
 
     it('introspects and describes Model as resource', function(done) {
@@ -480,7 +461,7 @@ describe('plugin', function() {
         .set('Accept', 'application/json')
         .end(function(err, res) {
           if (err) return done(err);
-          res.body.should.have.property('url');
+          res.body.should.have.property('actions');
           res.body.should.have.property('resource_schema');
           request(app)
             .options('/users/1')
@@ -488,7 +469,7 @@ describe('plugin', function() {
             .set('Accept', 'application/json')
             .end(function(err, res) {
               if (err) return done(err);
-              res.body.should.have.property('url');
+              res.body.should.have.property('actions');
               res.body.should.have.property('resource_schema');
               done();
             });

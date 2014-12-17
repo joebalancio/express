@@ -12,8 +12,6 @@
 - Emits events for accessing requests
 
 **Example**  
-Use the plugin and specify `resource` and `collection` URLs:
-
 ```javascript
 var mio = require('mio');
 var ExpressResource = require('mio-express');
@@ -22,14 +20,11 @@ var User = mio.Resource.extend({
   attributes: {
     id: { primary: true }
   }
+}, {
+  baseUrl: '/users'
 });
 
-User.use(ExpressResource.plugin({
-  url: {
-    resource: '/users/:id'
-    collection: '/users'
-  }
-});
+User.use(ExpressResource.plugin());
 ```
 
 This will expose Express route handlers at `User.routes` and a resource
@@ -51,17 +46,17 @@ Use `User.routes` handlers individually for complete control:
 
 ```javascript
 app
-  .get('/users', User.routes.index)
-  .post('/users', User.routes.create)
-  .patch('/users', User.routes.updateMany)
-  .delete('/users', User.routes.destroyMany)
-  .options('/users', User.routes.describe)
+  .get('/users', User.routes.get)
+  .post('/users', User.routes.post)
+  .patch('/users', User.routes.collection.patch)
+  .delete('/users', User.routes.collection.delete)
+  .options('/users', User.routes.options)
   .all('/users', User.routes.methodNotAllowed)
-  .get('/users/:id', User.routes.show)
-  .put('/users/:id', User.routes.replace)
-  .patch('/users/:id', User.routes.update)
-  .delete('/users/:id', User.routes.destroy)
-  .options('/users/:id', User.routes.describeMany)
+  .get('/users/:id', User.routes.get)
+  .put('/users/:id', User.routes.put)
+  .patch('/users/:id', User.routes.patch)
+  .delete('/users/:id', User.routes.delete)
+  .options('/users/:id', User.routes.options)
   .all('/users/:id', User.routes.methodNotAllowed);
 ```
 
@@ -77,71 +72,44 @@ npm install mio-express
 **Members**
 
 * [mio-express](#module_mio-express)
-  * [mio-express.plugin(settings)](#module_mio-express.plugin)
+  * [mio-express.plugin([options])](#module_mio-express.plugin)
   * [event: "request"](#event_request)
   * [mio-express~mio](#external_mio)
     * [mio.Resource](#external_mio.Resource)
       * [Resource.routes](#external_mio.Resource.routes)
-        * [routes.index(req, res, next)](#external_mio.Resource.routes.index)
-        * [routes.create(req, res, next)](#external_mio.Resource.routes.create)
-        * [routes.replace(req, res, next)](#external_mio.Resource.routes.replace)
-        * [routes.update(req, res, next)](#external_mio.Resource.routes.update)
-        * [routes.updateMany(req, res, next)](#external_mio.Resource.routes.updateMany)
-        * [routes.destroy(req, res, next)](#external_mio.Resource.routes.destroy)
-        * [routes.destroyMany(req, res, next)](#external_mio.Resource.routes.destroyMany)
-        * [routes.describe(req, res, next)](#external_mio.Resource.routes.describe)
+        * [routes.collection](#external_mio.Resource.routes.collection)
+          * [collection.get(req, res, next)](#external_mio.Resource.routes.collection.get)
+          * [collection.patch(req, res, next)](#external_mio.Resource.routes.collection.patch)
+          * [collection.delete(req, res, next)](#external_mio.Resource.routes.collection.delete)
+        * [routes.post(req, res, next)](#external_mio.Resource.routes.post)
+        * [routes.put(req, res, next)](#external_mio.Resource.routes.put)
+        * [routes.patch(req, res, next)](#external_mio.Resource.routes.patch)
+        * [routes.delete(req, res, next)](#external_mio.Resource.routes.delete)
+        * [routes.options(req, res, next)](#external_mio.Resource.routes.options)
       * [Resource.router(req, res, next)](#external_mio.Resource.router)
 
 <a name="module_mio-express.plugin"></a>
-##mio-express.plugin(settings)
+##mio-express.plugin([options])
 Returns Mio plugin function.
 
 **Params**
 
-- settings `Object`  
-  - url `Object`  
-  - resource `String`  
-  - collection `String`  
-  - \[actions\] `Object` - handlers that should be created/mounted  
+- \[options\] `Object`  
 
 **Returns**: `MioExpressPlugin`  
 **Example**  
-Provide all available REST actions:
-
 ```javascript
-User.use(exports({
-  url: {
-    resource: '/users/:id',
-    collection: '/users'
-  }
-});
-```
-
-Provide only specified REST actions:
-
-```javascript
-User.use(exports({
-  url: {
-    resource: '/users/:id',
-    collection: '/users',
-    actions: {
-      show: '/users/:id',
-      update: '/users/:id',
-      create: '/users'
-    }
-  }
-});
+User.use(ExpressResource.plugin());
 ```
 
 **404 Errors**
 
-Note that `show`, `update`, and `destroy` handlers return
+Note that `show`, `update`, and `remove` handlers return
 [`HttpError`](https://github.com/c9/node-http-error) errors for missing
 resources. These errors should be handled by your downstream error handling
 middleware.
 
 <a name="event_request"></a>
-
 ##event: "request"
 Emitted by route handlers on request.
 

@@ -66,7 +66,7 @@ describe('plugin', function() {
 
     it('responds to GET /users/123', function(done) {
       User.get = function(id, callback) {
-        callback(null, { id: 123, name: "bob" });
+        callback.call(User, null, { id: 123, name: "bob" });
       };
       request(app)
         .get('/users/123')
@@ -81,7 +81,7 @@ describe('plugin', function() {
 
     it('returns 404 error for missing resource', function(done) {
       User.get = function(id, callback) {
-        callback();
+        callback.call(User);
       };
       request(app)
         .get('/users/123')
@@ -170,7 +170,7 @@ describe('plugin', function() {
 
     it('responds to PUT /users/123', function(done) {
       User.get = function(id, callback) {
-        callback(null, new User({ id: 123, name: "bob" }));
+        callback.call(User, null, new User({ id: 123, name: "bob" }));
       };
       User.put = function(cb) {
         this.reset({id: 123, name: 'jeff' });
@@ -210,9 +210,9 @@ describe('plugin', function() {
 
     it('responds to PATCH /users/123 with single patch', function(done) {
       User.get = function(query, callback) {
-        callback(null, {
+        callback.call(User, null, {
           patch: function(cb) {
-            cb();
+            cb.call();
           }
         });
       };
@@ -233,7 +233,7 @@ describe('plugin', function() {
 
     it('responds to PATCH /users/123 with array of patches', function(done) {
       User.get = function(query, callback) {
-        callback(null, {
+        callback.call(User, null, {
           patch: function(cb) {
             cb();
           }
@@ -276,7 +276,7 @@ describe('plugin', function() {
 
     it('responds to DELETE /users/123', function(done) {
       User.get = function(query, callback) {
-        callback(null, new User({ id: 123 }));
+        callback.call(User, null, new User({ id: 123 }));
       };
       request(app)
         .del('/users/123')
@@ -290,7 +290,7 @@ describe('plugin', function() {
 
     it('returns 404 error for missing resource', function(done) {
       User.get = function(id, callback) {
-        callback();
+        callback.call(User);
       };
       request(app)
         .del('/users/123')

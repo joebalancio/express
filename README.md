@@ -116,9 +116,15 @@ Emitted by route handlers on request.
 **Params**
 
 - request `express.Request`  
-- \[resource\] `Resource`  
 
 **Scope**: inner event of [mio-express](#module_mio-express)  
+**Example**  
+```javascript
+Resource.on('request', function (req) {
+  req.body.createdBy = req.session.userId;
+});
+```
+
 
 
 ## Contributing

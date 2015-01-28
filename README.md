@@ -74,6 +74,11 @@ npm install mio-express
 * [mio-express](#module_mio-express)
   * [mio-express.plugin([options])](#module_mio-express.plugin)
   * [event: "request"](#event_request)
+  * [event: "request:get"](#module_mio-express..request_get)
+  * [event: "request:post"](#module_mio-express..request_post)
+  * [event: "request:put"](#module_mio-express..request_put)
+  * [event: "request:patch"](#module_mio-express..request_patch)
+  * [event: "request:delete"](#module_mio-express..request_delete)
   * [mio-express~mio](#external_mio)
     * [mio.Resource](#external_mio.Resource)
       * [Resource.routes](#external_mio.Resource.routes)
@@ -125,6 +130,51 @@ Resource.on('request', function (req) {
 });
 ```
 
+<a name="module_mio-express..request_get"></a>
+##event: "request:get"
+Emitted by route handlers on GET request.
+
+**Params**
+
+- request `express.Request`  
+
+**Scope**: inner event of [mio-express](#module_mio-express)  
+<a name="module_mio-express..request_post"></a>
+##event: "request:post"
+Emitted by route handlers on POST request.
+
+**Params**
+
+- request `express.Request`  
+
+**Scope**: inner event of [mio-express](#module_mio-express)  
+<a name="module_mio-express..request_put"></a>
+##event: "request:put"
+Emitted by route handlers on PUT request.
+
+**Params**
+
+- request `express.Request`  
+
+**Scope**: inner event of [mio-express](#module_mio-express)  
+<a name="module_mio-express..request_patch"></a>
+##event: "request:patch"
+Emitted by route handlers on PATCH request.
+
+**Params**
+
+- request `express.Request`  
+
+**Scope**: inner event of [mio-express](#module_mio-express)  
+<a name="module_mio-express..request_delete"></a>
+##event: "request:delete"
+Emitted by route handlers on DELETE request.
+
+**Params**
+
+- request `express.Request`  
+
+**Scope**: inner event of [mio-express](#module_mio-express)  
 
 
 ## Contributing

@@ -208,52 +208,6 @@ describe('plugin', function() {
         });
     });
 
-    it('responds to PATCH /users/123 with single patch', function(done) {
-      User.get = function(query, callback) {
-        callback.call(User, null, {
-          patch: function(cb) {
-            cb.call();
-          }
-        });
-      };
-      request(app)
-        .patch('/users/123')
-        .set('Accept', 'application/json')
-        .send({
-          op: 'replace',
-          path: '/active',
-          value: true
-        })
-        .expect(204)
-        .end(function(err, res) {
-          if (err) return done(err);
-          done();
-        });
-    });
-
-    it('responds to PATCH /users/123 with array of patches', function(done) {
-      User.get = function(query, callback) {
-        callback.call(User, null, {
-          patch: function(cb) {
-            cb();
-          }
-        });
-      };
-      request(app)
-        .patch('/users/123')
-        .set('Accept', 'application/json')
-        .send([{
-          op: 'replace',
-          path: '/active',
-          value: true
-        }])
-        .expect(204)
-        .end(function(err, res) {
-          if (err) return done(err);
-          done();
-        });
-    });
-
     it('passes error along to response', function(done) {
       User.get = function(id, callback) {
         callback(new Error("uh oh"));
@@ -266,6 +220,28 @@ describe('plugin', function() {
         .end(function(err, res) {
           if (err) return done(err);
           res.body.should.have.property('error');
+          done();
+        });
+    });
+  });
+
+  describe('.patch()', function () {
+
+    it('responds to PATCH /users/123', function(done) {
+      User.get = function(id, callback) {
+        callback.call(User, null, new User({ id: 123, name: "bob" }));
+      };
+      User.patch = function(cb) {
+        this.reset({id: 123, name: 'jeff' });
+        cb();
+      };
+      request(app)
+        .patch('/users/123')
+        .send({ name: "jeff" })
+        .set('Accept', 'application/json')
+        .expect(204)
+        .end(function(err, res) {
+          if (err) return done(err);
           done();
         });
     });
@@ -362,7 +338,7 @@ describe('plugin', function() {
         callback.call(User);
       };
       User.Collection.get = function(query, callback) {
-        callback.call(User, null, [{ active: false }]);
+        callback.call(User, null, new User.Collection([{ active: false }]));
       };
       request(app)
         .patch('/users')
@@ -384,7 +360,7 @@ describe('plugin', function() {
         callback.call(User);
       };
       User.Collection.get = function(query, callback) {
-        callback.call(User, null, [{ active: false }]);
+        callback.call(User, null, new User.Collection([{ active: false }]));
       };
       request(app)
         .patch('/users')

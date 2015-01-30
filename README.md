@@ -15,7 +15,7 @@
 **Example**  
 ```javascript
 var mio = require('mio');
-var ServerRoutes = require('mio-express');
+var ServerRoutes = require('mio-express').plugin;
 
 var User = mio.Resource.extend({
   attributes: {
@@ -77,6 +77,9 @@ npm install mio-express
 ##mio-express.plugin([options])
 Returns Mio plugin function.
 
+Handlers return [`http-errors`](https://github.com/jshttp/http-errors).
+These should be handled by your downstream error handling middleware.
+
 **Params**
 
 - \[options\] `Object`  
@@ -84,15 +87,8 @@ Returns Mio plugin function.
 **Returns**: `MioExpressPlugin`  
 **Example**  
 ```javascript
-User.use(ExpressResource.plugin());
+User.use(require('mio-express').plugin());
 ```
-
-**404 Errors**
-
-Note that `show`, `update`, and `remove` handlers return
-[`HttpError`](https://github.com/c9/node-http-error) errors for missing
-resources. These errors should be handled by your downstream error handling
-middleware.
 
 <a name="event_request"></a>
 ##event: "request"

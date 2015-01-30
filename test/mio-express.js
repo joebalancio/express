@@ -89,7 +89,7 @@ describe('plugin', function() {
         .expect(500)
         .end(function(err, res) {
           if (err) return done(err);
-          expect(res.body).to.have.property('error', '404: Not Found');
+          expect(res.body).to.have.property('error', 'Not Found');
           done();
         });
     });
@@ -274,7 +274,7 @@ describe('plugin', function() {
         .expect(500)
         .end(function(err, res) {
           if (err) return done(err);
-          expect(res.body).to.have.property('error', '404: Not Found');
+          expect(res.body).to.have.property('error', 'Not Found');
           done();
         });
     });

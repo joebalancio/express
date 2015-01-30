@@ -9,12 +9,13 @@
 - Responds with 405 status for unsupported methods
 - Support [`Prefer`](http://tools.ietf.org/html/rfc7240#section-4.2)
   header to control whether PUT and PATCH return the resource
+- Includes `Location` header for created resources
 - Emits events for accessing requests
 
 **Example**  
 ```javascript
 var mio = require('mio');
-var ExpressResource = require('mio-express');
+var ServerRoutes = require('mio-express');
 
 var User = mio.Resource.extend({
   attributes: {
@@ -24,13 +25,10 @@ var User = mio.Resource.extend({
   baseUrl: '/users'
 });
 
-User.use(ExpressResource.plugin());
+User.use(ServerRoutes());
 ```
 
-This will expose Express route handlers at `User.routes` and a resource
-routing middleware via `User.router`.
-
-Use `User.router` to route all actions:
+This will expose Express routing middleware via `User.router`:
 
 ```javascript
 var bodyParser = require('body-parser');
@@ -40,24 +38,6 @@ var app = express();
 app
   .use(bodyParser.json())
   .use(User.router);
-```
-
-Use `User.routes` handlers individually for complete control:
-
-```javascript
-app
-  .get('/users', User.routes.get)
-  .post('/users', User.routes.post)
-  .patch('/users', User.routes.collection.patch)
-  .delete('/users', User.routes.collection.delete)
-  .options('/users', User.routes.options)
-  .all('/users', User.routes.methodNotAllowed)
-  .get('/users/:id', User.routes.get)
-  .put('/users/:id', User.routes.put)
-  .patch('/users/:id', User.routes.patch)
-  .delete('/users/:id', User.routes.delete)
-  .options('/users/:id', User.routes.options)
-  .all('/users/:id', User.routes.methodNotAllowed);
 ```
 
 ## Installation

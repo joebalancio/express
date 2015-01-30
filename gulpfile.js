@@ -50,7 +50,7 @@ gulp.task('instrument', 'Instrument code using jscoverage.', function () {
 
 gulp.task('docs', 'Generate documentation.', function(done) {
   jsdoc2md.render('./lib/*.js', {
-    template: './lib/readme.hbs'
+    template: './lib/README-template.hbs'
   })
   .on('error', done)
   .on('end', done)

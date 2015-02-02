@@ -43,6 +43,7 @@ describe('plugin', function() {
       .use(User.router)
       .use(function(err, req, res, next) {
         if (err) {
+          process.env.DEBUG && console.error(err.stack);
           return res.status(500).json({ error: err.message });
         }
         next();
@@ -132,7 +133,7 @@ describe('plugin', function() {
     it('Adds parameters that match attributes to request body', function(done) {
       app.post('/groups/:group_id/users', User.routes.post);
       User.before('post', function(changed, cb) {
-        cb(null, changed);
+        cb(null, new User(changed));
       });
       request(app)
         .post('/groups/3/users')
@@ -160,6 +161,24 @@ describe('plugin', function() {
           User.stores = [];
           if (err) return done(err);
           res.body.should.have.property('error');
+          done();
+        });
+    });
+
+    it('creates collection of resources', function (done) {
+      User.hook('collection:post', function(body, cb) {
+        cb(null, new User.Collection([new User({ id: 123, name: "bob" })]));
+      });
+      request(app)
+        .post('/users')
+        .send([{ id: 123, name: "bob" }])
+        .set('Accept', 'application/json')
+        .expect(201)
+        .end(function(err, res) {
+          if (err) return done(err);
+          expect(res.body).to.be.an('array');
+          expect(res.body[0]).to.be.an('object');
+          expect(res.body[0]).to.have.property('name', 'bob');
           done();
         });
     });
@@ -378,8 +397,11 @@ describe('plugin', function() {
     });
 
     it('passes error along to response', function(done) {
-      User.Collection.patch = function(query, changes, callback) {
-        callback(new Error("uh oh"));
+      User.Collection.get = function (query, callback) {
+        callback.call(User.Collection, null, new User.Collection());
+      };
+      User.Collection.patch = function (query, changes, callback) {
+        callback.call(User.Collection, new Error("uh oh"));
       };
       request(app)
         .patch('/users')

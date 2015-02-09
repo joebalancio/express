@@ -132,8 +132,11 @@ describe('plugin', function() {
 
     it('Adds parameters that match attributes to request body', function(done) {
       app.post('/groups/:group_id/users', User.routes.post);
-      User.before('post', function(changed, cb) {
+      User.hook('post', function(changed, cb) {
         cb(null, new User(changed));
+      });
+      User.hook('collection:post', function(changed, cb) {
+        cb(null, new User.Collection([new User(changed[0])]));
       });
       request(app)
         .post('/groups/3/users')
@@ -145,7 +148,21 @@ describe('plugin', function() {
           res.status.should.equal(201);
           res.body.should.have.property('id', 123);
           res.body.should.have.property('group_id', 3);
-          done();
+
+          request(app)
+            .post('/groups/3/users')
+            .send([{ id: 123, name: "bob" }])
+            .set('Accept', 'application/json')
+            .end(function(err, res) {
+              User.stores = [];
+              if (err) return done(err);
+              res.status.should.equal(201);
+              res.body.should.be.an('array');
+              res.body.should.have.property('length', 1);
+              res.body[0].should.be.an('object');
+              res.body[0].should.have.property('id', 123);
+              done();
+            });
         });
     });
 
@@ -245,8 +262,9 @@ describe('plugin', function() {
   });
 
   describe('.patch()', function () {
+    beforeEach(createUserAndApp);
 
-    it('responds to PATCH /users/123', function(done) {
+    it('responds to PATCH /users/123', function (done) {
       User.get = function(id, callback) {
         callback.call(User, null, new User({ id: 123, name: "bob" }));
       };
@@ -261,6 +279,24 @@ describe('plugin', function() {
         .expect(204)
         .end(function(err, res) {
           if (err) return done(err);
+          done();
+        });
+    });
+
+    it('passes error along to response', function (done) {
+      User.get = function (id, callback) {
+        callback.call(User, null, new User({ id: 123, name: "bob" }));
+      };
+      User.prototype.patch = function (cb) {
+        cb(new Error('uh oh'));
+      };
+      request(app)
+        .patch('/users/123')
+        .set('Accept', 'application/json')
+        .expect(500)
+        .end(function(err, res) {
+          if (err) return done(err);
+          res.body.should.have.property('error');
           done();
         });
     });

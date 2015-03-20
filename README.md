@@ -65,6 +65,12 @@ npm install mio-express
   * [event: "response:patch"](#module_mio-express..response_patch)
   * [event: "request:delete"](#module_mio-express..request_delete)
   * [event: "response:delete"](#module_mio-express..response_delete)
+  * [event: "request:collection:get"](#module_mio-express..request_collection_get)
+  * [event: "response:collection:get"](#module_mio-express..response_collection_get)
+  * [event: "request:collection:patch"](#module_mio-express..request_collection_patch)
+  * [event: "response:collection:patch"](#module_mio-express..response_collection_patch)
+  * [event: "request:collection:delete"](#module_mio-express..request_collection_delete)
+  * [event: "response:collection:delete"](#module_mio-express..response_collection_delete)
   * [mio-express~mio](#external_mio)
     * [mio.Resource](#external_mio.Resource)
       * [Resource.routes](#external_mio.Resource.routes)
@@ -103,12 +109,14 @@ Emitted by route handlers on request.
 **Params**
 
 - request `express.Request`  
+- next `function`  
 
 **Scope**: inner event of [mio-express](#module_mio-express)  
 **Example**  
 ```javascript
-Resource.on('request', function (req) {
+Resource.hook('request', function (req, next) {
   req.body.createdBy = req.session.userId;
+  next();
 });
 ```
 
@@ -119,12 +127,14 @@ Emitted by route handlers on response.
 **Params**
 
 - response `express.Response`  
+- next `function`  
 
 **Scope**: inner event of [mio-express](#module_mio-express)  
 **Example**  
 ```javascript
-Resource.on('response', function (res) {
+Resource.hook('response', function (res, next) {
   res.cookie('name', 'tobi', { domain: '.example.com', path: '/admin', secure: true });
+  next();
 });
 ```
 
@@ -135,6 +145,7 @@ Emitted by route handlers on GET request.
 **Params**
 
 - request `express.Request`  
+- next `function`  
 
 **Scope**: inner event of [mio-express](#module_mio-express)  
 <a name="module_mio-express..response_get"></a>
@@ -144,6 +155,8 @@ Emitted by route handlers on GET response.
 **Params**
 
 - response `express.Response`  
+- resource `mio.Resource`  
+- next `function`  
 
 **Scope**: inner event of [mio-express](#module_mio-express)  
 <a name="module_mio-express..request_post"></a>
@@ -153,6 +166,7 @@ Emitted by route handlers on POST request.
 **Params**
 
 - request `express.Request`  
+- next `function`  
 
 **Scope**: inner event of [mio-express](#module_mio-express)  
 <a name="module_mio-express..response_post"></a>
@@ -162,6 +176,8 @@ Emitted by route handlers on POST response.
 **Params**
 
 - response `express.Response`  
+- result `mio.Resource` | `mio.Resource.Collection`  
+- next `function`  
 
 **Scope**: inner event of [mio-express](#module_mio-express)  
 <a name="module_mio-express..request_put"></a>
@@ -171,6 +187,7 @@ Emitted by route handlers on PUT request.
 **Params**
 
 - request `express.Request`  
+- next `function`  
 
 **Scope**: inner event of [mio-express](#module_mio-express)  
 <a name="module_mio-express..response_put"></a>
@@ -180,6 +197,8 @@ Emitted by route handlers on PUT response.
 **Params**
 
 - response `express.Response`  
+- resource `mio.Resource`  
+- next `function`  
 
 **Scope**: inner event of [mio-express](#module_mio-express)  
 <a name="module_mio-express..request_patch"></a>
@@ -189,6 +208,7 @@ Emitted by route handlers on PATCH request.
 **Params**
 
 - request `express.Request`  
+- next `function`  
 
 **Scope**: inner event of [mio-express](#module_mio-express)  
 <a name="module_mio-express..response_patch"></a>
@@ -198,6 +218,8 @@ Emitted by route handlers on PATCH response.
 **Params**
 
 - response `express.Response`  
+- resource `mio.Resource`  
+- next `function`  
 
 **Scope**: inner event of [mio-express](#module_mio-express)  
 <a name="module_mio-express..request_delete"></a>
@@ -207,6 +229,7 @@ Emitted by route handlers on DELETE request.
 **Params**
 
 - request `express.Request`  
+- next `function`  
 
 **Scope**: inner event of [mio-express](#module_mio-express)  
 <a name="module_mio-express..response_delete"></a>
@@ -216,6 +239,70 @@ Emitted by route handlers on DELETE response.
 **Params**
 
 - response `express.Response`  
+- resource `mio.Resource`  
+- next `function`  
+
+**Scope**: inner event of [mio-express](#module_mio-express)  
+<a name="module_mio-express..request_collection_get"></a>
+##event: "request:collection:get"
+Emitted by route handlers on collection GET request.
+
+**Params**
+
+- request `express.Request`  
+- next `function`  
+
+**Scope**: inner event of [mio-express](#module_mio-express)  
+<a name="module_mio-express..response_collection_get"></a>
+##event: "response:collection:get"
+Emitted by route handlers on collection GET response.
+
+**Params**
+
+- response `express.Response`  
+- collection `mio.Resource.Collection`  
+- next `function`  
+
+**Scope**: inner event of [mio-express](#module_mio-express)  
+<a name="module_mio-express..request_collection_patch"></a>
+##event: "request:collection:patch"
+Emitted by route handlers on collection PATCH request.
+
+**Params**
+
+- request `express.Request`  
+- next `function`  
+
+**Scope**: inner event of [mio-express](#module_mio-express)  
+<a name="module_mio-express..response_collection_patch"></a>
+##event: "response:collection:patch"
+Emitted by route handlers on collection PATCH response.
+
+**Params**
+
+- response `express.Response`  
+- collection `mio.Resource.Collection`  
+- next `function`  
+
+**Scope**: inner event of [mio-express](#module_mio-express)  
+<a name="module_mio-express..request_collection_delete"></a>
+##event: "request:collection:delete"
+Emitted by route handlers on collection DELETE request.
+
+**Params**
+
+- request `express.Request`  
+- next `function`  
+
+**Scope**: inner event of [mio-express](#module_mio-express)  
+<a name="module_mio-express..response_collection_delete"></a>
+##event: "response:collection:delete"
+Emitted by route handlers on collection DELETE response.
+
+**Params**
+
+- response `express.Response`  
+- next `function`  
 
 **Scope**: inner event of [mio-express](#module_mio-express)  
 

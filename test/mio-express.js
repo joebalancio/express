@@ -643,13 +643,13 @@ describe('plugin', function() {
         .on('request', function (req) {
           events.push(['request', req]);
         })
-        .on('request:get', function (req) {
+        .on('request:collection:get', function (req) {
           events.push(['request:get', req]);
         })
         .on('response', function (res) {
           events.push(['response', res]);
         })
-        .on('response:get', function (res) {
+        .on('response:collection:get', function (res) {
           events.push(['response:get', res]);
         });
 
@@ -792,13 +792,13 @@ describe('plugin', function() {
         .on('request', function (req) {
           events.push(['request', req]);
         })
-        .on('request:delete', function (req) {
+        .on('request:collection:delete', function (req) {
           events.push(['request:delete', req]);
         })
         .on('response', function (res) {
           events.push(['response', res]);
         })
-        .on('response:delete', function (res) {
+        .on('response:collection:delete', function (res) {
           events.push(['response:delete', res]);
         });
 

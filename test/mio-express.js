@@ -307,13 +307,12 @@ describe('plugin', function() {
     beforeEach(createUserAndApp);
 
     it('responds to PUT /users/123', function(done) {
-      User.get = function(id, callback) {
-        callback.call(User, null, new User({ id: 123, name: 'bob' }));
-      };
-      User.put = function(cb) {
-        this.reset({id: 123, name: 'jeff' });
-        cb();
-      };
+      User.hook('get', function (query, cb) {
+        cb(null, new User({ id: 123, name: 'bob' }));
+      });
+      User.hook('put', function (query, data, cb) {
+        cb(null, new User(data));
+      });
       request(app)
         .put('/users/123')
         .send({ name: 'jeff' })
@@ -328,13 +327,13 @@ describe('plugin', function() {
     });
 
     it('creates new resource if it one did not exist', function(done) {
-      User.get = function(query, cb) {
-        cb.call(this);
-      };
-      User.prototype.put = function(cb) {
-        this.reset({ id: 123, name: 'jeff'});
+      User.hook('get', function (query, cb) {
         cb();
-      };
+      });
+      User.hook('put', function (query, data, cb) {
+        data.id = 123;
+        cb(null, new User(data));
+      });
       request(app)
         .put('/users/123')
         .send({ name: 'jeff' })
@@ -370,13 +369,12 @@ describe('plugin', function() {
     it('should fire events', function(done) {
       var events = [];
 
-      User.get = function(id, callback) {
-        callback.call(User, null, new User({ id: 123, name: 'bob' }));
-      };
-      User.put = function(cb) {
-        this.reset({id: 123, name: 'jeff' });
-        cb();
-      };
+      User.hook('get', function (query, cb) {
+        cb(null, new User({ id: 123, name: 'bob' }));
+      });
+      User.hook('put', function (query, data, cb) {
+        cb(null, new User(data));
+      });
 
       User
         .on('request', function (req) {
@@ -408,6 +406,33 @@ describe('plugin', function() {
           expect(events[2][1]).to.be.ok();
           expect(events[3][0]).to.equal('response:put');
           expect(events[3][1]).to.be.ok();
+          done();
+        });
+    });
+    it('should retain data set on query', function (done) {
+      var queryRef;
+
+      User.hook('get', function (query, cb) {
+        cb(null, new User({ id: 123, name: 'bob' }));
+      });
+
+      User.on('request:put', function (req) {
+        req.query.foo = 'bar';
+      });
+
+      User.hook('put', function (query, data, cb) {
+        queryRef = query;
+        cb();
+      });
+
+      request(app)
+        .put('/users/123')
+        .send({ name: 'jeff' })
+        .end(function(err) {
+          if (err) {
+            return done(err);
+          }
+          expect(queryRef.query).to.have.property('foo', 'bar');
           done();
         });
     });

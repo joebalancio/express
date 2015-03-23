@@ -331,10 +331,11 @@ describe('plugin', function() {
       User.get = function(query, cb) {
         cb.call(this);
       };
-      User.prototype.put = function(cb) {
-        this.reset({ id: 123, name: 'jeff'});
-        cb();
-      };
+      User.hook('put', function (query, data, cb, resource) {
+        data.id = 123;
+        resource.set(data);
+        cb(null, resource);
+      });
       request(app)
         .put('/users/123')
         .send({ name: 'jeff' })

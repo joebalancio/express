@@ -310,8 +310,7 @@ describe('plugin', function() {
       User.get = function(id, callback) {
         callback.call(User, null, new User({ id: 123, name: 'bob' }));
       };
-      User.put = function(cb) {
-        this.reset({id: 123, name: 'jeff' });
+      User.put = function(query, body, cb) {
         cb();
       };
       request(app)
@@ -331,10 +330,9 @@ describe('plugin', function() {
       User.get = function(query, cb) {
         cb.call(this);
       };
-      User.hook('put', function (query, data, cb, resource) {
+      User.hook('put', function (query, data, cb) {
         data.id = 123;
-        resource.set(data);
-        cb(null, resource);
+        cb(null, new User(data));
       });
       request(app)
         .put('/users/123')
@@ -374,8 +372,7 @@ describe('plugin', function() {
       User.get = function(id, callback) {
         callback.call(User, null, new User({ id: 123, name: 'bob' }));
       };
-      User.put = function(cb) {
-        this.reset({id: 123, name: 'jeff' });
+      User.put = function(query, body, cb) {
         cb();
       };
 

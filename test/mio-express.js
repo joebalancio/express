@@ -160,6 +160,24 @@ describe('plugin', function() {
           done();
         });
     });
+    it('should output modified resource in the response', function(done) {
+      User.get = function(id, callback) {
+        callback.call(User, null, { id: 123, name: 'bob' });
+      };
+
+      User
+        .hook('response:get', function (res, resource, cb) {
+          cb(null, {foo: 'bar'});
+        });
+
+      request(app)
+        .get('/users/123')
+        .end(function(err, res) {
+          expect(err).to.not.be.ok();
+          expect(res.body).to.have.property('foo', 'bar');
+          done();
+        });
+    });
   });
 
   describe('.post()', function() {
@@ -301,6 +319,25 @@ describe('plugin', function() {
           done();
         });
     });
+    it('should output modified resource in the response', function(done) {
+      User.post = function(body, cb) {
+        cb(null, new User({ id: 123, name: 'bob' }));
+      };
+      User
+        .hook('response:post', function (res, resource, cb) {
+          cb(null, {foo: 'bar'});
+        });
+      request(app)
+        .post('/users')
+        .send({ id: 123, name: 'bob' })
+        .set('Accept', 'application/json')
+        .expect(201)
+        .end(function(err, res) {
+          expect(err).to.not.be.ok();
+          expect(res.body).to.have.property('foo', 'bar');
+          done();
+        });
+    });
   });
 
   describe('.put()', function() {
@@ -409,6 +446,29 @@ describe('plugin', function() {
           done();
         });
     });
+    it('should output modified resource in the response', function(done) {
+      User.get = function(id, callback) {
+        callback.call(User, null, new User({ id: 123, name: 'bob' }));
+      };
+      User
+        .hook('response:put', function (res, resource, cb) {
+          cb(null, {foo: 'bar'});
+        });
+      User.put = function(query, body, callback) {
+        callback.call(User, null, new User(body));
+      };
+      request(app)
+        .put('/users/123')
+        .send({ name: 'jeff' })
+        .set('Accept', 'application/json')
+        .set('Prefer', 'return=representation')
+        .expect(200)
+        .end(function(err, res) {
+          expect(err).to.not.be.ok();
+          expect(res.body).to.have.property('foo', 'bar');
+          done();
+        });
+    });
   });
 
   describe('.patch()', function () {
@@ -495,6 +555,30 @@ describe('plugin', function() {
           expect(events[2][1]).to.be.ok();
           expect(events[3][0]).to.equal('response:patch');
           expect(events[3][1]).to.be.ok();
+          done();
+        });
+    });
+    it.skip('should output modified resource in the response', function(done) {
+      User.get = function(id, callback) {
+        callback.call(User, null, new User({ id: 123, name: 'bob' }));
+      };
+      User
+        .hook('response:patch', function (res, resource, cb) {
+          cb(null, {foo: 'bar'});
+        });
+      User.patch = function(cb) {
+        this.reset({id: 123, name: 'jeff' });
+        cb();
+      };
+      request(app)
+        .patch('/users/123')
+        .send({ name: 'jeff' })
+        .set('Accept', 'application/json')
+        .set('Prefer', 'return=representation')
+        .expect(200)
+        .end(function(err, res) {
+          expect(err).to.not.be.ok();
+          expect(res.body).to.have.property('foo', 'bar');
           done();
         });
     });
@@ -669,6 +753,25 @@ describe('plugin', function() {
           done();
         });
     });
+    it('should output modified resource in the response', function(done) {
+      User.Collection.get = function(query, callback) {
+        callback(null, [{hello: 'world'}]);
+      };
+      User
+        .hook('response:collection:get', function (res, resource, cb) {
+          cb(null, [{foo: 'bar'}]);
+        });
+      request(app)
+        .get('/users')
+        .set('Accept', 'application/json')
+        .expect(200)
+        .end(function(err, res) {
+          expect(err).to.not.be.ok();
+          expect(res.body).to.have.lengthOf(1);
+          expect(res.body[0]).to.have.property('foo', 'bar');
+          done();
+        });
+    });
   });
 
   describe('.collection.patch()', function() {
@@ -739,6 +842,35 @@ describe('plugin', function() {
             return done(err);
           }
           res.body.should.have.property('error');
+          done();
+        });
+    });
+    it('should output modified resource in the response', function(done) {
+      User.Collection.patch = function(query, changes, callback) {
+        callback.call(User);
+      };
+      User.Collection.get = function(query, callback) {
+        callback.call(User, null, new User.Collection([{ active: false }]));
+      };
+
+      User
+        .hook('response:collection:patch', function (res, resource, cb) {
+          cb(null, [{foo: 'bar'}]);
+        });
+      request(app)
+        .patch('/users')
+        .set('Accept', 'application/json')
+        .set('Prefer', 'return=representation')
+        .send({
+          op: 'replace',
+          path: '/active',
+          value: true
+        })
+        .expect(200)
+        .end(function(err, res) {
+          expect(err).to.not.be.ok();
+          expect(res.body).to.have.lengthOf(1);
+          expect(res.body[0]).to.have.property('foo', 'bar');
           done();
         });
     });

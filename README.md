@@ -11,6 +11,7 @@
   header to control whether PUT and PATCH return the resource
 - Includes `Location` header for created resources
 - Emits events for accessing requests
+- Query parameter type coercion
 
 **Example**  
 ```javascript
@@ -38,6 +39,18 @@ var app = express();
 app
   .use(bodyParser.json())
   .use(User.router);
+```
+
+### Query parameter type coercion:
+
+```javascript
+var Item = Resource.extend({
+  attributes: {
+    stock: {
+      coerce: 'number'
+    }
+  }
+})
 ```
 
 ## Installation
@@ -92,6 +105,11 @@ Returns Mio plugin function.
 Handlers return [`http-errors`](https://github.com/jshttp/http-errors).
 These should be handled by your downstream error handling middleware.
 
+## Type coercion
+
+In order to convert the intended query parameters into numbers, add
+`coerce: "number"` to the resource's attribute defintion.
+
 **Params**
 
 - \[options\] `Object`  
@@ -100,6 +118,18 @@ These should be handled by your downstream error handling middleware.
 **Example**  
 ```javascript
 User.use(require('mio-express').plugin());
+```
+
+Type coercion:
+
+```javascript
+var Item = Resource.extend({
+  attributes: {
+    stock: {
+      coerce: 'number'
+    }
+  }
+})
 ```
 
 <a name="event_request"></a>

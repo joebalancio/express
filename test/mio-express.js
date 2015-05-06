@@ -34,9 +34,14 @@ describe('plugin', function() {
   function createUserAndApp() {
     User = mio.Resource.extend({
       attributes: {
-        id: { primary: true },
+        id: {
+          primary: true,
+          coerce: 'number'
+        },
         name: {},
-        group_id: {}
+        group_id: {
+          coerce: 'number'
+        }
       }
     }, {
       baseUrl: '/users'

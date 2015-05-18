@@ -641,6 +641,45 @@ describe('plugin', function() {
           done();
         });
     });
+    it('should use the correct context when deleting', function (done) {
+      var SubUser = User.extend({}, {
+        urls: {
+          delete: '/subusers/:id'
+        },
+        server: {
+          use: [
+            ExpressResource.plugin()
+          ]
+        }
+      });
+      app.use(SubUser.router);
+      SubUser.hooks = []; // Don't inherit hooks from parent
+      SubUser.hook('delete', function (query, cb) {
+        // Ensures that previously set resource equals this context
+        expect(query.query.Resource).to.equal(this);
+        cb();
+      });
+      SubUser.hook('get', function (query, cb) {
+        query.query.Resource = this;
+        cb(null, new User({ id: 123 }));
+      });
+      User.hook('delete', function (query, cb) {
+        // Ensure that sub class (User) does not get called
+        cb(true);
+      });
+
+      request(app)
+        .del('/subusers/123')
+        .set('Accept', 'application/json')
+        .end(function(err, res) {
+          if (err) {
+            return done(err);
+          }
+          res.status.should.equal(204);
+          done();
+        });
+
+    });
     it('should fire events', function(done) {
       var events = [];
 

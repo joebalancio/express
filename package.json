@@ -1,7 +1,7 @@
 {
   "name": "mio-express",
   "description": "Expose Mio resources via RESTful Express middleware.",
-  "version": "0.13.2",
+  "version": "0.13.3",
   "homepage": "https://github.com/mio/express",
   "author": {
     "name": "Alex Mingoia",

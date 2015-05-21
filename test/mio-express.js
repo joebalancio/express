@@ -343,6 +343,24 @@ describe('plugin', function() {
           done();
         });
     });
+
+    it('should be able to post extra data as number strings', function(done) {
+      User.post = function(body, cb) {
+        cb(null, new User({ id: 123, name: 'bob' }));
+      };
+      request(app)
+        .post('/users')
+        .send({ id: 123, name: 'bob', blah: '123' })
+        .set('Accept', 'application/json')
+        .expect(201)
+        .end(function(err, res) {
+          if (err) {
+            return done(err);
+          }
+          res.body.should.have.property('id', 123);
+          done();
+        });
+    });
   });
 
   describe('.put()', function() {
